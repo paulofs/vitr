@@ -9,6 +9,7 @@ use axum::{
 };
 use minijinja::{Environment, context, path_loader};
 use minijinja_autoreload::AutoReloader;
+use tower_http::services::ServeDir;
 
 // Root handler.
 async fn root(State(state): State<AppState>) -> impl IntoResponse {
@@ -21,6 +22,8 @@ async fn health_check() -> StatusCode {
 }
 
 pub fn app() -> Router {
+    let serve_dir = ServeDir::new("assets");
+
     let reloader = AutoReloader::new(|notifier| {
         let template_path = "templates";
         let mut env = Environment::new();
@@ -36,6 +39,7 @@ pub fn app() -> Router {
     Router::new()
         .route("/", routing::get(root))
         .route("/health_check", routing::get(health_check))
+        .nest_service("/assets", serve_dir)
         .with_state(app_state)
 }
 
